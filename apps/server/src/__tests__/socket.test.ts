@@ -134,4 +134,43 @@ describe("Socket.IO Server (Auth, Rooms, Messages & Presence)", () => {
       bobSocket.close();
     }
   });
+
+  it("broadcasts room:created on REST room creation and relays typing events", async () => {
+    const aliceSocket = await connectSocket(baseUrl, aliceToken);
+    const bobSocket = await connectSocket(baseUrl, bobToken);
+
+    try {
+      await new Promise<void>((resolve) => {
+        aliceSocket.emit("room:join", { roomId }, () => resolve());
+      });
+      await new Promise<void>((resolve) => {
+        bobSocket.emit("room:join", { roomId }, () => resolve());
+      });
+
+      // Typing event relayed to other room members
+      const typingStartPromise = new Promise<{ user: OnlineUserDTO; isTyping: boolean }>((resolve) => {
+        bobSocket.once("typing:update", (payload) => resolve(payload));
+      });
+      aliceSocket.emit("typing:start", { roomId });
+      const typingPayload = await typingStartPromise;
+      expect(typingPayload.user.name).toBe("Alice");
+      expect(typingPayload.isTyping).toBe(true);
+
+      // REST POST /api/rooms broadcasts room:created to connected sockets
+      const roomCreatedPromise = new Promise<{ name: string }>((resolve) => {
+        bobSocket.once("room:created", (room) => resolve(room));
+      });
+      const createRes = await request(bundle.app)
+        .post("/api/rooms")
+        .set("Authorization", `Bearer ${aliceToken}`)
+        .send({ name: "devops", description: "Infra e deploy" });
+      expect(createRes.status).toBe(201);
+
+      const broadcastedRoom = await roomCreatedPromise;
+      expect(broadcastedRoom.name).toBe("devops");
+    } finally {
+      aliceSocket.close();
+      bobSocket.close();
+    }
+  });
 });
