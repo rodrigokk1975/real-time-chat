@@ -1,9 +1,15 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
+import type { RoomDTO } from "@chat/shared";
 import { env } from "./config/env.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
+import { createRoomsRouter } from "./modules/rooms/rooms.routes.js";
 
-export function createApp() {
+export interface AppDependencies {
+  onRoomCreated?: (room: RoomDTO) => void;
+}
+
+export function createApp(deps: AppDependencies = {}) {
   const app = express();
 
   app.use(
@@ -19,6 +25,7 @@ export function createApp() {
   });
 
   app.use("/api/auth", authRouter);
+  app.use("/api/rooms", createRoomsRouter(deps.onRoomCreated));
 
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     console.error("[server] Unhandled error:", err);
