@@ -1,10 +1,8 @@
-import http from "node:http";
-import { createApp } from "./app.js";
+import { createServerBundle } from "./bootstrap.js";
 import { env } from "./config/env.js";
 
-const app = createApp();
-const server = http.createServer(app);
+const { httpServer } = createServerBundle();
 
-server.listen(env.PORT, () => {
+httpServer.listen(env.PORT, () => {
   console.log(`[server] listening on http://localhost:${env.PORT}`);
 });
