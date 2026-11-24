@@ -18,11 +18,12 @@ export function ChatPage() {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUserDTO[]>([]);
   const [typingUsers, setTypingUsers] = useState<OnlineUserDTO[]>([]);
+  const [roomsDrawerOpen, setRoomsDrawerOpen] = useState(false);
+  const [presenceDrawerOpen, setPresenceDrawerOpen] = useState(false);
 
   const activeRoomRef = useRef<string | null>(null);
   activeRoomRef.current = activeRoomId;
 
-  // Load initial rooms list
   useEffect(() => {
     if (!token) return;
     api
@@ -36,7 +37,6 @@ export function ChatPage() {
       .catch(console.error);
   }, [token]);
 
-  // Subscribe to global + active room socket events
   useEffect(() => {
     if (!socket) return;
 
@@ -91,7 +91,6 @@ export function ChatPage() {
     };
   }, [socket]);
 
-  // Join room, fetch history, and re-join automatically after reconnect
   useEffect(() => {
     if (!token || !activeRoomId) return;
 
@@ -177,11 +176,13 @@ export function ChatPage() {
   const activeRoom = rooms.find((r) => r.id === activeRoomId) ?? null;
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden">
+    <div className="flex h-screen bg-[#0B0C0E] text-zinc-100 overflow-hidden">
       <RoomSidebar
         rooms={rooms}
         activeRoomId={activeRoomId}
         user={user}
+        mobileOpen={roomsDrawerOpen}
+        onCloseMobile={() => setRoomsDrawerOpen(false)}
         onSelectRoom={setActiveRoomId}
         onCreateRoom={async (name, description) => {
           const { room } = await api.createRoom(token, {
@@ -201,17 +202,25 @@ export function ChatPage() {
             messages={messages}
             currentUserId={user.id}
             connectionStatus={status}
+            onlineCount={onlineUsers.length}
             typingUsers={typingUsers}
             hasMoreHistory={Boolean(nextCursor)}
             loadingHistory={loadingHistory}
+            onOpenRoomsMobile={() => setRoomsDrawerOpen(true)}
+            onOpenPresenceMobile={() => setPresenceDrawerOpen(true)}
             onLoadMoreHistory={handleLoadMoreHistory}
             onSendMessage={handleSendMessage}
             onTypingChange={handleTypingChange}
           />
-          <PresencePanel users={onlineUsers} currentUserId={user.id} />
+          <PresencePanel
+            users={onlineUsers}
+            currentUserId={user.id}
+            mobileOpen={presenceDrawerOpen}
+            onCloseMobile={() => setPresenceDrawerOpen(false)}
+          />
         </>
       ) : (
-        <main className="flex flex-1 items-center justify-center text-sm text-slate-400">
+        <main className="flex flex-1 items-center justify-center text-sm text-zinc-500">
           Selecione ou crie uma sala para iniciar o chat
         </main>
       )}

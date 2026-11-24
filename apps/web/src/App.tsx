@@ -8,7 +8,7 @@ function AppRoutes() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-400 text-sm">
+      <div className="min-h-screen flex items-center justify-center bg-[#0B0C0E] text-zinc-400 text-sm">
         Validando sessão...
       </div>
     );
